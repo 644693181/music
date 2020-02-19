@@ -4,7 +4,7 @@
       <li class="suggestItem" v-for="(item,index) in result" :key="index">
         <div>
           <span class="icon" v-html="getIcon(item)">图标</span>
-          <span class="text">{{item.singerName?item.singerName:item.title}}</span>
+          <span class="text">{{item.singerName?item.singerName:item.name}}</span>
         </div>
       </li>
     </ul>
@@ -13,6 +13,7 @@
 
 <script>
 import scroll from "base/scroll/scroll";
+import { wantSongList } from "common/js/song";
 const SINGER_TYPE = "singer";
 export default {
   name: "suggest",
@@ -47,22 +48,30 @@ export default {
   //方法集合
   methods: {
     search(obj) {
+      let ret = [];
       this.$axios.post("/music/search", { word: obj.word }).then(res => {
-        console.log(res.data);
-        this.result = this.genResult(res.data.data);
+        ret = res.data.data;
+        console.log("ret :", ret);
+        this.genResult(ret);
       });
     },
     genResult(data) {
-      let result = [];
+      let retTemp = [];
       if (data.zhida && data.zhida.zhida_singer) {
-        result.push({ ...data.zhida.zhida_singer, ...{ type: SINGER_TYPE } });
+        console.log("zhidasinger");
+        retTemp.push({ ...data.zhida.zhida_singer, ...{ type: SINGER_TYPE } });
       }
 
       if (data.song && data.song.list.length) {
-        result = result.concat(data.song.list);
+        console.log("songlist");
+        wantSongList(data.song.list).then(res => {
+          // console.log(res);
+          retTemp = retTemp.concat(res);
+          this.result = retTemp;
+          console.log("this.result :", this.result);
+        });
       }
-      console.log(result);
-      return result;
+      return retTemp;
     },
     searchMore() {},
     getIcon(item) {
